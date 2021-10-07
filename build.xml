@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="JC Bitcoin Wallet" default="Wallet" basedir=".">
+    <target name="jcpro">
+        <taskdef name="javacard" classname="pro.javacard.ant.JavaCard" classpath="ant-javacard.jar" />
+    </target>
+    <target name="Wallet" depends="jcpro">
+        <javacard>
+            <cap jckit="/Users/johannzapf/JCKIT3.0.4"
+                 aid="01020304050607080900" sources="src"
+                 output="/Users/johannzapf/Desktop/JC_Utilities/btcwallet.cap">
+                <applet class="de.johannzapf.jc.bitcoinwallet.Wallet" aid="0102030405060708090005" />
+            </cap>
+        </javacard>
+    </target>
+</project>
