@@ -6,9 +6,9 @@ import javacardx.crypto.Cipher;
 
 public class Wallet extends Applet {
 
-    private static final byte[] helloWorld = {'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '!'};
+    private static final byte[] version = {'1', '.', '0', '.', '1'};
     private static final byte CLA = (byte) 0x80;
-    private static final byte INS_HELLO = (byte) 0x00;
+    private static final byte INS_VERSION = (byte) 0x00;
     private static final byte INS_CONN_MODE = (byte) 0x01;
     private static final byte INS_STATUS = (byte) 0x02;
 
@@ -65,8 +65,8 @@ public class Wallet extends Applet {
         }
 
         switch(buffer[ISO7816.OFFSET_INS]){
-            case INS_HELLO:
-                getHelloWorld(apdu);
+            case INS_VERSION:
+                getVersion(apdu);
                 break;
             case INS_CONN_MODE:
                 getConnectionMode(apdu);
@@ -103,8 +103,6 @@ public class Wallet extends Applet {
         Signature sign = Signature.getInstance(MessageDigest.ALG_NULL, Signature.SIG_CIPHER_ECDSA, Cipher.PAD_NULL, true);
         sign.init(privKey, Signature.MODE_SIGN);
         short length = sign.sign(buffer, ISO7816.OFFSET_CDATA, bytes, signature, (short) 0);
-
-        //CryptoUtils.fixS(signature, (short) 0);
 
         Util.arrayCopyNonAtomic(signature, (short) 0, buffer, (short) 0, length);
         apdu.setOutgoingAndSend((short) 0, length);
@@ -178,10 +176,10 @@ public class Wallet extends Applet {
         apdu.setOutgoingAndSend((short) 0, length);
     }
 
-    private void getHelloWorld(APDU apdu) {
+    private void getVersion(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
-        short length = (short) helloWorld.length;
-        Util.arrayCopyNonAtomic(helloWorld, (short) 0, buffer, (short) 0, length);
+        short length = (short) version.length;
+        Util.arrayCopyNonAtomic(version, (short) 0, buffer, (short) 0, length);
         apdu.setOutgoingAndSend((short) 0, length);
     }
 
