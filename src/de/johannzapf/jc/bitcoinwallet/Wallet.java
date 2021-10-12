@@ -6,7 +6,7 @@ import javacardx.crypto.Cipher;
 
 public class Wallet extends Applet {
 
-    private static final byte[] version = {'1', '.', '0', '.', '1'};
+    private static final byte[] version = {'1', '.', '0', '.', '2'};
     private static final byte CLA = (byte) 0x80;
     private static final byte INS_VERSION = (byte) 0x00;
     private static final byte INS_CONN_MODE = (byte) 0x01;
@@ -94,7 +94,6 @@ public class Wallet extends Applet {
         }
     }
 
-
     private void manageTransaction(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         short bytes = apdu.setIncomingAndReceive();
@@ -102,7 +101,10 @@ public class Wallet extends Applet {
         //Signature
         Signature sign = Signature.getInstance(MessageDigest.ALG_NULL, Signature.SIG_CIPHER_ECDSA, Cipher.PAD_NULL, true);
         sign.init(privKey, Signature.MODE_SIGN);
-        short length = sign.sign(buffer, ISO7816.OFFSET_CDATA, bytes, signature, (short) 0);
+        short length;
+        do {
+            length = sign.sign(buffer, ISO7816.OFFSET_CDATA, bytes, signature, (short) 0);
+        } while(!CryptoUtils.checkS(signature));
 
         Util.arrayCopyNonAtomic(signature, (short) 0, buffer, (short) 0, length);
         apdu.setOutgoingAndSend((short) 0, length);
