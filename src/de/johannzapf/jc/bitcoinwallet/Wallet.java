@@ -16,10 +16,14 @@ public class Wallet extends Applet {
     private static final byte INS_GET_PUBKEY = (byte) 0x04;
     private static final byte INS_GET_ADDR = (byte) 0x05;
     private static final byte INS_PAY = (byte) 0x06;
-    private static final byte INS_GET_PRIVKEY = (byte) 0x07;
+    private static final byte INS_VERIFY_PIN = (byte) 0x07;
 
     private static final byte P1_MAINNET = (byte) 0x01;
     private static final byte P1_TESTNET = (byte) 0x02;
+
+
+    private static final byte PIN_TRIES = (byte) 3;
+    private static final byte PIN_SIZE = (byte) 4;
 
     private byte[] scratch;
 
@@ -28,13 +32,14 @@ public class Wallet extends Applet {
     private ECPrivateKey privKey;
     private ECPublicKey pubKey;
 
-    private byte[] transaction;
     private byte[] signature;
 
     private byte[] bcPub;
     private byte[] sha;
     private byte[] ripemd160;
     private byte[] net;
+
+    private OwnerPIN pin;
 
     public static void install(byte[] bArray, short bOffset, byte bLength) {
         new Wallet().register(bArray, (short) (bOffset + 1), bArray[bOffset]);
@@ -43,7 +48,6 @@ public class Wallet extends Applet {
     public Wallet(){
         this.scratch = JCSystem.makeTransientByteArray((short)256, JCSystem.CLEAR_ON_DESELECT);
 
-        this.transaction = new byte[128];
         this.signature = new byte[72];
 
         this.bcPub = new byte[65];
@@ -51,6 +55,8 @@ public class Wallet extends Applet {
         this.ripemd160 = new byte[20];
         this.net = new byte[21];
         this.address = new byte[25];
+
+        this.pin = new OwnerPIN(PIN_TRIES, PIN_SIZE);
     }
 
     public void process(APDU apdu) {
@@ -86,12 +92,16 @@ public class Wallet extends Applet {
             case INS_PAY:
                 manageTransaction(apdu);
                 break;
-            case INS_GET_PRIVKEY:
-                getPrivKey(apdu);
+            case INS_VERIFY_PIN:
+                verifyPin(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
         }
+    }
+
+    private void verifyPin(APDU apdu){
+
     }
 
     private void manageTransaction(APDU apdu){
@@ -112,6 +122,13 @@ public class Wallet extends Applet {
 
     private void initialize(APDU apdu){
         byte[] buffer = apdu.getBuffer();
+        short bytes = apdu.setIncomingAndReceive();
+
+        //Set PIN
+        if(bytes != PIN_SIZE){
+            ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+        pin.update(buffer, ISO7816.OFFSET_CDATA, PIN_SIZE);
 
         //Generate Private and Public Key
         KeyPair keyPair = new KeyPair(KeyPair.ALG_EC_FP, KeyBuilder.LENGTH_EC_FP_256);
@@ -157,12 +174,6 @@ public class Wallet extends Applet {
         }
 
         this.initialized = 0x01;
-    }
-
-    private void getPrivKey(APDU apdu){
-        byte[] buffer = apdu.getBuffer();
-        short length = privKey.getS(buffer, (short) 0);
-        apdu.setOutgoingAndSend((short) 0, length);
     }
 
     private void getPubKey(APDU apdu){
