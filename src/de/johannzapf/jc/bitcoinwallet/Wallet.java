@@ -7,7 +7,7 @@ import javacardx.crypto.Cipher;
 
 public class Wallet extends Applet implements ExtendedLength {
 
-    private static final byte[] version = {'1', '.', '1', '.', '0'};
+    private static final byte[] version = {'2', '.', '0', '.', '0'};
     private static final byte CLA = (byte) 0x80;
     private static final byte INS_VERSION = (byte) 0x00;
     private static final byte INS_CONN_MODE = (byte) 0x01;
