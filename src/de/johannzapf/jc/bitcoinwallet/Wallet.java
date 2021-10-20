@@ -14,10 +14,10 @@ public class Wallet extends Applet implements ExtendedLength {
     private static final byte INS_STATUS = (byte) 0x02;
 
     private static final byte INS_INIT = (byte) 0x03;
-    private static final byte INS_GET_PUBKEY = (byte) 0x04;
+    private static final byte INS_VERIFY_PIN = (byte) 0x04;
+
     private static final byte INS_GET_ADDR = (byte) 0x05;
     private static final byte INS_PAY = (byte) 0x06;
-    private static final byte INS_VERIFY_PIN = (byte) 0x07;
 
     private static final byte P1_MAINNET = (byte) 0x01;
     private static final byte P1_TESTNET = (byte) 0x02;
@@ -83,9 +83,6 @@ public class Wallet extends Applet implements ExtendedLength {
                 break;
             case INS_INIT:
                 initialize(apdu);
-                break;
-            case INS_GET_PUBKEY:
-                getPubKey(apdu);
                 break;
             case INS_GET_ADDR:
                 getAddr(apdu);
@@ -177,12 +174,6 @@ public class Wallet extends Applet implements ExtendedLength {
         }
 
         this.initialized = 0x01;
-    }
-
-    private void getPubKey(APDU apdu){
-        byte[] buffer = apdu.getBuffer();
-        short length = pubKey.getW(buffer, (short) 0);
-        apdu.setOutgoingAndSend((short) 0, length);
     }
 
     private void getAddr(APDU apdu){

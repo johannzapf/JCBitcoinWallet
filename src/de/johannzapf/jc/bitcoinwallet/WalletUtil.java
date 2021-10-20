@@ -2,6 +2,11 @@ package de.johannzapf.jc.bitcoinwallet;
 
 public class WalletUtil {
 
+    /**
+     * Reverses a given byte array
+     * @param a
+     * @return
+     */
     public static byte[] reverse(byte[] a){
         byte[] reversed = new byte[a.length];
         for(short i = 0; i < a.length; i++){
@@ -10,7 +15,15 @@ public class WalletUtil {
         return reversed;
     }
 
+    /**
+     * Gets the length of a transaction.
+     * @param transaction
+     * @return
+     */
     public static short getTransactionLength(byte[] transaction){
+        //In our case, every TX ends on (00, 00, 00, 00) (Locktime), but the last byte before that is always 'ac',
+        //so we can just check if there are more 0s
+
         short length = (short) transaction.length;
 
         short index = (short) (length-4);
