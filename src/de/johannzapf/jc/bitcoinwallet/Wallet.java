@@ -2,11 +2,12 @@ package de.johannzapf.jc.bitcoinwallet;
 
 import javacard.framework.*;
 import javacard.security.*;
+import javacardx.apdu.ExtendedLength;
 import javacardx.crypto.Cipher;
 
-public class Wallet extends Applet {
+public class Wallet extends Applet implements ExtendedLength {
 
-    private static final byte[] version = {'1', '.', '0', '.', '2'};
+    private static final byte[] version = {'1', '.', '1', '.', '0'};
     private static final byte CLA = (byte) 0x80;
     private static final byte INS_VERSION = (byte) 0x00;
     private static final byte INS_CONN_MODE = (byte) 0x01;
@@ -17,6 +18,7 @@ public class Wallet extends Applet {
     private static final byte INS_GET_ADDR = (byte) 0x05;
     private static final byte INS_PAY = (byte) 0x06;
     private static final byte INS_VERIFY_PIN = (byte) 0x07;
+    private static final byte INS_SIGN = (byte) 0x08;
 
     private static final byte P1_MAINNET = (byte) 0x01;
     private static final byte P1_TESTNET = (byte) 0x02;
@@ -36,10 +38,13 @@ public class Wallet extends Applet {
 
     private byte[] bcPub;
     private byte[] sha;
-    private byte[] ripemd160;
+    private byte[] pubKeyHash;
     private byte[] net;
 
     private OwnerPIN pin;
+
+    private Transaction tx;
+    private MultiTransaction mtx;
 
     public static void install(byte[] bArray, short bOffset, byte bLength) {
         new Wallet().register(bArray, (short) (bOffset + 1), bArray[bOffset]);
@@ -52,11 +57,14 @@ public class Wallet extends Applet {
 
         this.bcPub = new byte[65];
         this.sha = new byte[32];
-        this.ripemd160 = new byte[20];
+        this.pubKeyHash = new byte[20];
         this.net = new byte[21];
         this.address = new byte[25];
 
         this.pin = new OwnerPIN(PIN_TRIES, PIN_SIZE);
+
+        this.tx = new Transaction();
+        this.mtx = new MultiTransaction();
     }
 
     public void process(APDU apdu) {
@@ -95,6 +103,9 @@ public class Wallet extends Applet {
             case INS_VERIFY_PIN:
                 verifyPin(apdu);
                 break;
+            case INS_SIGN:
+                sign(apdu);
+                break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
         }
@@ -104,7 +115,7 @@ public class Wallet extends Applet {
 
     }
 
-    private void manageTransaction(APDU apdu){
+    private void sign(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         short bytes = apdu.setIncomingAndReceive();
 
@@ -118,6 +129,42 @@ public class Wallet extends Applet {
 
         Util.arrayCopyNonAtomic(signature, (short) 0, buffer, (short) 0, length);
         apdu.setOutgoingAndSend((short) 0, length);
+    }
+
+    private void manageTransaction(APDU apdu){
+        byte[] buffer = apdu.getBuffer();
+        short bytes = apdu.setIncomingAndReceive();
+
+
+        if((short)(bytes-37) % 58 != 0){
+            ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
+
+        byte[] finalTx;
+
+        if(bytes == 95) {
+            tx.parse(buffer, ISO7816.OFFSET_CDATA);
+
+            byte[] hashedTx = tx.getDoubleHashedTx(pubKeyHash);
+
+            Signature sign = Signature.getInstance(MessageDigest.ALG_NULL, Signature.SIG_CIPHER_ECDSA, Cipher.PAD_NULL, true);
+            sign.init(privKey, Signature.MODE_SIGN);
+            short length;
+            do {
+                length = sign.sign(hashedTx, (short) 0, (short) 32, signature, (short) 0);
+            } while (!CryptoUtils.checkS(signature));
+
+            finalTx = tx.getFinalTransaction(signature, length, bcPub);
+        } else {
+            mtx.parse(buffer, ISO7816.OFFSET_CDATA);
+            finalTx = mtx.getFinalTransaction(pubKeyHash, bcPub, privKey);
+        }
+
+        short length = WalletUtil.getTransactionLength(finalTx);
+
+        apdu.setOutgoing();
+        apdu.setOutgoingLength(length);
+        apdu.sendBytesLong(finalTx, (short) 0 , length);
     }
 
     private void initialize(APDU apdu){
@@ -147,7 +194,7 @@ public class Wallet extends Applet {
         sha256.doFinal(bcPub, (short) 0, (short) bcPub.length, sha, (short) 0);
 
         //RIPEMD-160
-        Ripemd160.hash32(sha, (short) 0, ripemd160, (short) 0, scratch, (short) 0);
+        Ripemd160.hash32(sha, (short) 0, pubKeyHash, (short) 0, scratch, (short) 0);
 
         //Add Network Byte (0x00 for Mainnet, 0x6F for Testnet)
         if (buffer[ISO7816.OFFSET_P1] == P1_MAINNET) {
@@ -157,8 +204,8 @@ public class Wallet extends Applet {
         } else {
             ISOException.throwIt(ISO7816.SW_WRONG_P1P2);
         }
-        for (short i = 0 ; i < ripemd160.length ; i++){
-            net[(short) (i+1)] = ripemd160[i];
+        for (short i = 0; i < pubKeyHash.length ; i++){
+            net[(short) (i+1)] = pubKeyHash[i];
         }
 
         //Double SHA-256
