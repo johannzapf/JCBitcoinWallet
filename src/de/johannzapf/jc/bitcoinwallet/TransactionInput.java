@@ -4,30 +4,30 @@ import javacard.framework.Util;
 
 public class TransactionInput {
 
-    private byte arg3A; // previous output index
-    private byte[] arg3B; // previous tx hash
-    private byte[] arg3C; // outputpubkey
+    private byte prevOutputIndex; // previous output index
+    private byte[] prevTxHash; // previous tx hash
+    private byte[] outputPubkey; // outputpubkey
 
     public TransactionInput(){
-        arg3B = new byte[32];
-        arg3C = new byte[25];
+        prevTxHash = new byte[32];
+        outputPubkey = new byte[25];
     }
 
     public void parse(byte[] data, short offset){
-        this.arg3A = data[offset];
-        Util.arrayCopyNonAtomic(data, (short) (offset+1), this.arg3B, (short) 0, (short) 32);
-        Util.arrayCopyNonAtomic(data, (short) (offset+33), this.arg3C, (short) 0, (short) 25);
+        this.prevOutputIndex = data[offset];
+        Util.arrayCopyNonAtomic(data, (short) (offset+1), this.prevTxHash, (short) 0, (short) 32);
+        Util.arrayCopyNonAtomic(data, (short) (offset+33), this.outputPubkey, (short) 0, (short) 25);
     }
 
-    public byte getArg3A() {
-        return arg3A;
+    public byte getPrevOutputIndex() {
+        return prevOutputIndex;
     }
 
-    public byte[] getArg3B() {
-        return arg3B;
+    public byte[] getPrevTxHash() {
+        return prevTxHash;
     }
 
-    public byte[] getArg3C() {
-        return arg3C;
+    public byte[] getOutputPubkey() {
+        return outputPubkey;
     }
 }

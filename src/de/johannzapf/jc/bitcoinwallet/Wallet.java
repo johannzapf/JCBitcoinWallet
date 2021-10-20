@@ -18,7 +18,6 @@ public class Wallet extends Applet implements ExtendedLength {
     private static final byte INS_GET_ADDR = (byte) 0x05;
     private static final byte INS_PAY = (byte) 0x06;
     private static final byte INS_VERIFY_PIN = (byte) 0x07;
-    private static final byte INS_SIGN = (byte) 0x08;
 
     private static final byte P1_MAINNET = (byte) 0x01;
     private static final byte P1_TESTNET = (byte) 0x02;
@@ -34,8 +33,6 @@ public class Wallet extends Applet implements ExtendedLength {
     private ECPrivateKey privKey;
     private ECPublicKey pubKey;
 
-    private byte[] signature;
-
     private byte[] bcPub;
     private byte[] sha;
     private byte[] pubKeyHash;
@@ -44,7 +41,6 @@ public class Wallet extends Applet implements ExtendedLength {
     private OwnerPIN pin;
 
     private Transaction tx;
-    private MultiTransaction mtx;
 
     public static void install(byte[] bArray, short bOffset, byte bLength) {
         new Wallet().register(bArray, (short) (bOffset + 1), bArray[bOffset]);
@@ -52,8 +48,6 @@ public class Wallet extends Applet implements ExtendedLength {
 
     public Wallet(){
         this.scratch = JCSystem.makeTransientByteArray((short)256, JCSystem.CLEAR_ON_DESELECT);
-
-        this.signature = new byte[72];
 
         this.bcPub = new byte[65];
         this.sha = new byte[32];
@@ -64,7 +58,6 @@ public class Wallet extends Applet implements ExtendedLength {
         this.pin = new OwnerPIN(PIN_TRIES, PIN_SIZE);
 
         this.tx = new Transaction();
-        this.mtx = new MultiTransaction();
     }
 
     public void process(APDU apdu) {
@@ -103,9 +96,6 @@ public class Wallet extends Applet implements ExtendedLength {
             case INS_VERIFY_PIN:
                 verifyPin(apdu);
                 break;
-            case INS_SIGN:
-                sign(apdu);
-                break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
         }
@@ -113,22 +103,6 @@ public class Wallet extends Applet implements ExtendedLength {
 
     private void verifyPin(APDU apdu){
 
-    }
-
-    private void sign(APDU apdu){
-        byte[] buffer = apdu.getBuffer();
-        short bytes = apdu.setIncomingAndReceive();
-
-        //Signature
-        Signature sign = Signature.getInstance(MessageDigest.ALG_NULL, Signature.SIG_CIPHER_ECDSA, Cipher.PAD_NULL, true);
-        sign.init(privKey, Signature.MODE_SIGN);
-        short length;
-        do {
-            length = sign.sign(buffer, ISO7816.OFFSET_CDATA, bytes, signature, (short) 0);
-        } while(!CryptoUtils.checkS(signature));
-
-        Util.arrayCopyNonAtomic(signature, (short) 0, buffer, (short) 0, length);
-        apdu.setOutgoingAndSend((short) 0, length);
     }
 
     private void manageTransaction(APDU apdu){
@@ -140,26 +114,8 @@ public class Wallet extends Applet implements ExtendedLength {
             ISOException.throwIt(ISO7816.SW_DATA_INVALID);
         }
 
-        byte[] finalTx;
-
-        if(bytes == 95) {
-            tx.parse(buffer, ISO7816.OFFSET_CDATA);
-
-            byte[] hashedTx = tx.getDoubleHashedTx(pubKeyHash);
-
-            Signature sign = Signature.getInstance(MessageDigest.ALG_NULL, Signature.SIG_CIPHER_ECDSA, Cipher.PAD_NULL, true);
-            sign.init(privKey, Signature.MODE_SIGN);
-            short length;
-            do {
-                length = sign.sign(hashedTx, (short) 0, (short) 32, signature, (short) 0);
-            } while (!CryptoUtils.checkS(signature));
-
-            finalTx = tx.getFinalTransaction(signature, length, bcPub);
-        } else {
-            mtx.parse(buffer, ISO7816.OFFSET_CDATA);
-            finalTx = mtx.getFinalTransaction(pubKeyHash, bcPub, privKey);
-        }
-
+        tx.parse(buffer, ISO7816.OFFSET_CDATA);
+        byte[] finalTx = tx.getFinalTransaction(pubKeyHash, bcPub, privKey);
         short length = WalletUtil.getTransactionLength(finalTx);
 
         apdu.setOutgoing();
