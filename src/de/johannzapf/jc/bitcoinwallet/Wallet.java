@@ -3,7 +3,6 @@ package de.johannzapf.jc.bitcoinwallet;
 import javacard.framework.*;
 import javacard.security.*;
 import javacardx.apdu.ExtendedLength;
-import javacardx.crypto.Cipher;
 
 public class Wallet extends Applet implements ExtendedLength {
 
@@ -17,7 +16,7 @@ public class Wallet extends Applet implements ExtendedLength {
     private static final byte INS_VERIFY_PIN = (byte) 0x04;
 
     private static final byte INS_GET_ADDR = (byte) 0x05;
-    private static final byte INS_PAY = (byte) 0x06;
+    private static final byte INS_CREATE_TRANSACTION = (byte) 0x06;
 
     private static final byte P1_MAINNET = (byte) 0x01;
     private static final byte P1_TESTNET = (byte) 0x02;
@@ -90,8 +89,8 @@ public class Wallet extends Applet implements ExtendedLength {
             case INS_GET_ADDR:
                 getAddr(apdu);
                 break;
-            case INS_PAY:
-                manageTransaction(apdu);
+            case INS_CREATE_TRANSACTION:
+                createTransaction(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
@@ -107,7 +106,7 @@ public class Wallet extends Applet implements ExtendedLength {
         }
     }
 
-    private void manageTransaction(APDU apdu){
+    private void createTransaction(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         short bytes = apdu.setIncomingAndReceive();
 
