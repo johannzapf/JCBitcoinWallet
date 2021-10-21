@@ -15,7 +15,7 @@ public class Wallet extends Applet {
     private static final byte INS_INIT = (byte) 0x03;
     private static final byte INS_GET_PUBKEY = (byte) 0x04;
     private static final byte INS_GET_ADDR = (byte) 0x05;
-    private static final byte INS_PAY = (byte) 0x06;
+    private static final byte INS_SIGN = (byte) 0x06;
     private static final byte INS_VERIFY_PIN = (byte) 0x07;
 
     private static final byte P1_MAINNET = (byte) 0x01;
@@ -33,6 +33,8 @@ public class Wallet extends Applet {
     private ECPublicKey pubKey;
 
     private byte[] signature;
+
+    private Signature sign;
 
     private byte[] bcPub;
     private byte[] sha;
@@ -57,6 +59,8 @@ public class Wallet extends Applet {
         this.address = new byte[25];
 
         this.pin = new OwnerPIN(PIN_TRIES, PIN_SIZE);
+
+        this.sign = Signature.getInstance(MessageDigest.ALG_NULL, Signature.SIG_CIPHER_ECDSA, Cipher.PAD_NULL, true);
     }
 
     public void process(APDU apdu) {
@@ -89,8 +93,8 @@ public class Wallet extends Applet {
             case INS_GET_ADDR:
                 getAddr(apdu);
                 break;
-            case INS_PAY:
-                manageTransaction(apdu);
+            case INS_SIGN:
+                signTransaction(apdu);
                 break;
             case INS_VERIFY_PIN:
                 verifyPin(apdu);
@@ -104,12 +108,11 @@ public class Wallet extends Applet {
 
     }
 
-    private void manageTransaction(APDU apdu){
+    private void signTransaction(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         short bytes = apdu.setIncomingAndReceive();
 
         //Signature
-        Signature sign = Signature.getInstance(MessageDigest.ALG_NULL, Signature.SIG_CIPHER_ECDSA, Cipher.PAD_NULL, true);
         sign.init(privKey, Signature.MODE_SIGN);
         short length;
         do {
