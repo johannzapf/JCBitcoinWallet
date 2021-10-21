@@ -1,5 +1,7 @@
 package de.johannzapf.jc.bitcoinwallet;
 
+import javacard.framework.JCSystem;
+
 public class CryptoUtils {
 
     private static final byte[] MAX_S = { (byte) 0x7F, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF,
@@ -18,7 +20,7 @@ public class CryptoUtils {
         //Extract S value from DER encoded signature
         byte rlength = signature[3];
         byte slength = signature[5 + rlength];
-        byte[] s = new byte[slength];
+        byte[] s = JCSystem.makeTransientByteArray(slength, JCSystem.CLEAR_ON_DESELECT);
         short j = 0;
         for(short i = (short) (6 + rlength); i < (short)(6 + rlength + slength); i++){
             s[j++] = signature[i];
@@ -26,7 +28,7 @@ public class CryptoUtils {
 
         //Remove possible 0-padding from S value
         while (s[0] == 0x00) {
-            byte[] newS = new byte[slength-1];
+            byte[] newS = JCSystem.makeTransientByteArray((short) (slength-1), JCSystem.CLEAR_ON_DESELECT);
             for(short i = 0; i < (short)(slength-1); i++){
                 newS[i] = s[(short)(i+1)];
             }

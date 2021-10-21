@@ -84,14 +84,14 @@ public class Wallet extends Applet implements ExtendedLength {
             case INS_INIT:
                 initialize(apdu);
                 break;
+            case INS_VERIFY_PIN:
+                verifyPin(apdu);
+                break;
             case INS_GET_ADDR:
                 getAddr(apdu);
                 break;
             case INS_PAY:
                 manageTransaction(apdu);
-                break;
-            case INS_VERIFY_PIN:
-                verifyPin(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
@@ -99,15 +99,20 @@ public class Wallet extends Applet implements ExtendedLength {
     }
 
     private void verifyPin(APDU apdu){
+        byte[] buffer = apdu.getBuffer();
+        apdu.setIncomingAndReceive();
 
+        if(!pin.check(buffer, ISO7816.OFFSET_CDATA, PIN_SIZE)){
+            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        }
     }
 
     private void manageTransaction(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         short bytes = apdu.setIncomingAndReceive();
 
-
-        if((short)(bytes-37) % 58 != 0){
+        if((short)(bytes-37) % 58 != 0) {
+            //Input Data doesn't have valid length
             ISOException.throwIt(ISO7816.SW_DATA_INVALID);
         }
 
@@ -135,7 +140,6 @@ public class Wallet extends Applet implements ExtendedLength {
         privKey = (ECPrivateKey) keyPair.getPrivate();
         pubKey = (ECPublicKey) keyPair.getPublic();
 
-
         //Represent Public Key as Point on Elliptic Curve
         Secp256k1.setCommonCurveParameters(privKey);
         Secp256k1.setCommonCurveParameters(pubKey);
@@ -146,7 +150,7 @@ public class Wallet extends Applet implements ExtendedLength {
         MessageDigest sha256 = MessageDigest.getInstance(MessageDigest.ALG_SHA_256, true);
         sha256.doFinal(bcPub, (short) 0, (short) bcPub.length, sha, (short) 0);
 
-        //RIPEMD-160
+        //RIPEMD-160: The result is the pubKeyHash of our address which we will need later
         Ripemd160.hash32(sha, (short) 0, pubKeyHash, (short) 0, scratch, (short) 0);
 
         //Add Network Byte (0x00 for Mainnet, 0x6F for Testnet)

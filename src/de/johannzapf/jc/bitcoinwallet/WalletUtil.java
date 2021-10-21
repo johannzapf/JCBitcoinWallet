@@ -1,5 +1,7 @@
 package de.johannzapf.jc.bitcoinwallet;
 
+import javacard.framework.JCSystem;
+
 public class WalletUtil {
 
     /**
@@ -8,7 +10,7 @@ public class WalletUtil {
      * @return
      */
     public static byte[] reverse(byte[] a){
-        byte[] reversed = new byte[a.length];
+        byte[] reversed = JCSystem.makeTransientByteArray((short) a.length, JCSystem.CLEAR_ON_DESELECT);
         for(short i = 0; i < a.length; i++){
             reversed[i] = a[(short)(a.length-1-i)];
         }

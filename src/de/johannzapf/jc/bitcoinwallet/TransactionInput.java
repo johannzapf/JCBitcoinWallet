@@ -1,5 +1,6 @@
 package de.johannzapf.jc.bitcoinwallet;
 
+import javacard.framework.JCSystem;
 import javacard.framework.Util;
 
 public class TransactionInput {
@@ -9,8 +10,8 @@ public class TransactionInput {
     private byte[] outputPubkey; // outputpubkey
 
     public TransactionInput(){
-        prevTxHash = new byte[32];
-        outputPubkey = new byte[25];
+        prevTxHash = JCSystem.makeTransientByteArray((short) 32, JCSystem.CLEAR_ON_DESELECT);
+        outputPubkey = JCSystem.makeTransientByteArray((short) 25, JCSystem.CLEAR_ON_DESELECT);
     }
 
     public void parse(byte[] data, short offset){
