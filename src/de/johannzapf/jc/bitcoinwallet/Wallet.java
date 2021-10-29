@@ -6,17 +6,17 @@ import javacardx.crypto.Cipher;
 
 public class Wallet extends Applet {
 
-    private static final byte[] version = {'1', '.', '0', '.', '2'};
+    private static final byte[] version = {'1', '.', '0', '.', '3'};
     private static final byte CLA = (byte) 0x80;
+
     private static final byte INS_VERSION = (byte) 0x00;
     private static final byte INS_CONN_MODE = (byte) 0x01;
     private static final byte INS_STATUS = (byte) 0x02;
-
     private static final byte INS_INIT = (byte) 0x03;
-    private static final byte INS_GET_PUBKEY = (byte) 0x04;
+    private static final byte INS_VERIFY_PIN = (byte) 0x04;
     private static final byte INS_GET_ADDR = (byte) 0x05;
     private static final byte INS_SIGN = (byte) 0x06;
-    private static final byte INS_VERIFY_PIN = (byte) 0x07;
+    private static final byte INS_GET_PUBKEY = (byte) 0x07;
 
     private static final byte P1_MAINNET = (byte) 0x01;
     private static final byte P1_TESTNET = (byte) 0x02;
@@ -114,10 +114,10 @@ public class Wallet extends Applet {
 
         //Signature
         sign.init(privKey, Signature.MODE_SIGN);
-        short length;
-        do {
-            length = sign.sign(buffer, ISO7816.OFFSET_CDATA, bytes, signature, (short) 0);
-        } while(!CryptoUtils.checkS(signature));
+        short length = sign.sign(buffer, ISO7816.OFFSET_CDATA, bytes, signature, (short) 0);
+
+        //Check and potentially fix S value
+        length += CryptoUtils.fixS(signature, (short) 0);
 
         Util.arrayCopyNonAtomic(signature, (short) 0, buffer, (short) 0, length);
         apdu.setOutgoingAndSend((short) 0, length);
