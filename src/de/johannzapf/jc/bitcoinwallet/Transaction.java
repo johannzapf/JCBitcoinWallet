@@ -83,10 +83,8 @@ public class Transaction {
             byte[] toSign = getDoubleHashedTx(pubKeyHash, i); //Retrieve SHA-256 Hash that needs to be signed
 
             //The actual Signature
-            short sigLength;
-            do {
-                sigLength = sign.sign(toSign, (short) 0, (short) 32, signature, (short) 0);
-            } while (!CryptoUtils.checkS(signature));
+            short sigLength = sign.sign(toSign, (short) 0, (short) 32, signature, (short) 0);
+            sigLength += CryptoUtils.fixS(signature, (short) 0);
 
             transaction[(short)(offset + 36)] = (byte) (3 + sigLength + pubKey.length); //InScriptLength
 
