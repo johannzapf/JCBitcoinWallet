@@ -6,16 +6,17 @@ import javacardx.apdu.ExtendedLength;
 
 public class Wallet extends Applet implements ExtendedLength {
 
-    private static final byte[] version = {'1', '.', '1', '.', '3'};
+    private static final byte[] version = {'1', '.', '2', '.', 'T'};
     private static final byte CLA = (byte) 0x80;
-
     private static final byte INS_VERSION = (byte) 0x00;
     private static final byte INS_CONN_MODE = (byte) 0x01;
     private static final byte INS_STATUS = (byte) 0x02;
+
     private static final byte INS_INIT = (byte) 0x03;
     private static final byte INS_VERIFY_PIN = (byte) 0x04;
+
     private static final byte INS_GET_ADDR = (byte) 0x05;
-    private static final byte INS_CREATE_TRANSACTION = (byte) 0x06;
+    private static final byte INS_PAY = (byte) 0x06;
 
     private static final byte P1_MAINNET = (byte) 0x01;
     private static final byte P1_TESTNET = (byte) 0x02;
@@ -82,14 +83,14 @@ public class Wallet extends Applet implements ExtendedLength {
             case INS_INIT:
                 initialize(apdu);
                 break;
-            case INS_VERIFY_PIN:
-                verifyPin(apdu);
-                break;
             case INS_GET_ADDR:
                 getAddr(apdu);
                 break;
-            case INS_CREATE_TRANSACTION:
-                createTransaction(apdu);
+            case INS_PAY:
+                manageTransaction(apdu);
+                break;
+            case INS_VERIFY_PIN:
+                verifyPin(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
@@ -97,20 +98,14 @@ public class Wallet extends Applet implements ExtendedLength {
     }
 
     private void verifyPin(APDU apdu){
-        byte[] buffer = apdu.getBuffer();
-        apdu.setIncomingAndReceive();
 
-        if(!pin.check(buffer, ISO7816.OFFSET_CDATA, PIN_SIZE)){
-            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
-        }
     }
 
-    private void createTransaction(APDU apdu){
+    private void manageTransaction(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         short bytes = apdu.setIncomingAndReceive();
 
-        if((short)(bytes-37) % 58 != 0) {
-            //Input Data doesn't have valid length
+        if((short)(bytes-37) % 58 != 0){
             ISOException.throwIt(ISO7816.SW_DATA_INVALID);
         }
 
@@ -138,6 +133,7 @@ public class Wallet extends Applet implements ExtendedLength {
         privKey = (ECPrivateKey) keyPair.getPrivate();
         pubKey = (ECPublicKey) keyPair.getPublic();
 
+
         //Represent Public Key as Point on Elliptic Curve
         Secp256k1.setCommonCurveParameters(privKey);
         Secp256k1.setCommonCurveParameters(pubKey);
@@ -148,7 +144,7 @@ public class Wallet extends Applet implements ExtendedLength {
         MessageDigest sha256 = MessageDigest.getInstance(MessageDigest.ALG_SHA_256, true);
         sha256.doFinal(bcPub, (short) 0, (short) bcPub.length, sha, (short) 0);
 
-        //RIPEMD-160: The result is the pubKeyHash of our address which we will need later
+        //RIPEMD-160
         Ripemd160.hash32(sha, (short) 0, pubKeyHash, (short) 0, scratch, (short) 0);
 
         //Add Network Byte (0x00 for Mainnet, 0x6F for Testnet)

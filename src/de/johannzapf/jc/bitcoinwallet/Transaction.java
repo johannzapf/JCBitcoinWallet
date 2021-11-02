@@ -1,6 +1,7 @@
 package de.johannzapf.jc.bitcoinwallet;
 
-import javacard.framework.JCSystem;
+import javacard.framework.ISO7816;
+import javacard.framework.ISOException;
 import javacard.framework.Util;
 import javacard.security.ECPrivateKey;
 import javacard.security.MessageDigest;
@@ -46,6 +47,10 @@ public class Transaction {
         Util.arrayCopyNonAtomic(data, (short) (offset+28), this.change, (short) 0, (short) 8);
 
         this.utxoAmount = data[(short) (offset+36)];
+        if(utxoAmount > 3){
+            //We do not support transactions with more than three inputs
+            ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
         this.transactionInputs = new TransactionInput[utxoAmount];
         for(short i = 0; i < utxoAmount; i++){
             transactionInputs[i] = new TransactionInput();
@@ -66,7 +71,7 @@ public class Transaction {
         //A standard transaction with one input is at most 180 + 80 = 260 bytes long
         //With every input transaction that is added, it grows by 180 bytes
         //However, it can be shorter than that, which is why the length is checked at the end with WalletUtil.getTransactionLength()
-        byte[] transaction = JCSystem.makeTransientByteArray((short)(this.utxoAmount * 180 + 80), JCSystem.CLEAR_ON_DESELECT);
+        byte[] transaction = new byte[(short)(this.utxoAmount * 180 + 80)];
 
         transaction[0] = 0x01; //Version
         transaction[4] = (byte) this.utxoAmount; //Number of Inputs
@@ -116,8 +121,8 @@ public class Transaction {
      */
     private byte[] getDoubleHashedTx(byte[] senderPubKeyHash, short txIndex){
         //A standard toHash object with one input is 107 + 41 = 148 bytes long
-        //With every input transaction that is added, it grows by 41 bytes (size of input without ScriptSig)
-        byte[] toSign = JCSystem.makeTransientByteArray((short)(107 + 41 * this.utxoAmount), JCSystem.CLEAR_ON_DESELECT);
+        //With every input transaction that is added, it grows by 41 bytes
+        byte[] toSign = new byte[(short)(107 + 41 * this.utxoAmount)];
 
         toSign[0] = 0x01; //Version
 
@@ -236,7 +241,7 @@ public class Transaction {
      */
     private static byte[] constructScriptPubKey(byte[] pubKeyHash){
         short scriptLength = 25;
-        byte[] scriptPubKey = JCSystem.makeTransientByteArray(scriptLength, JCSystem.CLEAR_ON_DESELECT);
+        byte[] scriptPubKey = new byte[scriptLength];
         scriptPubKey[0] = (byte) 0x76;
         scriptPubKey[1] = (byte) 0xa9;
         scriptPubKey[2] = (byte) 0x14;
