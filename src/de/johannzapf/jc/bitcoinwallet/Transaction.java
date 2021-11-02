@@ -10,6 +10,9 @@ import javacardx.crypto.Cipher;
 
 public class Transaction {
 
+    private byte[] sha;
+    private byte[] signature;
+
     private byte[] targetAddressPKH; // Pubkeyhash of target address
     private byte[] amount; // amount to spent (in satoshis)
     private byte[] change; // amount that goes back to address (in satoshis)
@@ -23,6 +26,8 @@ public class Transaction {
 
 
     public Transaction(){
+        sha = new byte[32];
+        signature = new byte[72];
         targetAddressPKH = new byte[20];
         amount = new byte[8];
         change = new byte[8];
@@ -59,7 +64,7 @@ public class Transaction {
         sign.init(privKey, Signature.MODE_SIGN);
 
         //A standard transaction with one input is at most 180 + 80 = 260 bytes long
-        //With every input transaction that is added, it grows by 180 bytes (length of an input)
+        //With every input transaction that is added, it grows by 180 bytes
         //However, it can be shorter than that, which is why the length is checked at the end with WalletUtil.getTransactionLength()
         byte[] transaction = JCSystem.makeTransientByteArray((short)(this.utxoAmount * 180 + 80), JCSystem.CLEAR_ON_DESELECT);
 
@@ -78,7 +83,6 @@ public class Transaction {
             byte[] toSign = getDoubleHashedTx(pubKeyHash, i); //Retrieve SHA-256 Hash that needs to be signed
 
             //The actual Signature
-            byte[] signature = JCSystem.makeTransientByteArray((short) 72, JCSystem.CLEAR_ON_DESELECT);
             short sigLength = sign.sign(toSign, (short) 0, (short) 32, signature, (short) 0);
             sigLength += CryptoUtils.fixS(signature, (short) 0);
 
@@ -156,7 +160,6 @@ public class Transaction {
         toSign[(short)(offset + 73)] = 0x01; //Sig Hash Code
 
         //Double SHA-256 entire structure
-        byte[] sha = JCSystem.makeTransientByteArray((short) 32, JCSystem.CLEAR_ON_DESELECT);
         sha256.doFinal(toSign, (short) 0, (short) toSign.length, sha, (short) 0);
         sha256.doFinal(sha, (short) 0, (short) sha.length, sha, (short) 0);
 
