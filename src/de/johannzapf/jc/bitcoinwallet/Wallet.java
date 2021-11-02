@@ -6,7 +6,7 @@ import javacardx.crypto.Cipher;
 
 public class Wallet extends Applet {
 
-    private static final byte[] version = {'1', '.', '0', '.', '3'};
+    private static final byte[] version = {'1', '.', '2', '.', 'S'};
     private static final byte CLA = (byte) 0x80;
 
     private static final byte INS_VERSION = (byte) 0x00;
