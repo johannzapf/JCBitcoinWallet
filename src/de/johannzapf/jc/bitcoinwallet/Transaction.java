@@ -1,5 +1,7 @@
 package de.johannzapf.jc.bitcoinwallet;
 
+import javacard.framework.ISO7816;
+import javacard.framework.ISOException;
 import javacard.framework.Util;
 import javacard.security.ECPrivateKey;
 import javacard.security.MessageDigest;
@@ -45,6 +47,10 @@ public class Transaction {
         Util.arrayCopyNonAtomic(data, (short) (offset+28), this.change, (short) 0, (short) 8);
 
         this.utxoAmount = data[(short) (offset+36)];
+        if(utxoAmount > 3){
+            //We do not support transactions with more than three inputs
+            ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+        }
         this.transactionInputs = new TransactionInput[utxoAmount];
         for(short i = 0; i < utxoAmount; i++){
             transactionInputs[i] = new TransactionInput();
@@ -82,10 +88,8 @@ public class Transaction {
             byte[] toSign = getDoubleHashedTx(pubKeyHash, i); //Retrieve SHA-256 Hash that needs to be signed
 
             //The actual Signature
-            short sigLength;
-            do {
-                sigLength = sign.sign(toSign, (short) 0, (short) 32, signature, (short) 0);
-            } while (!CryptoUtils.checkS(signature));
+            short sigLength = sign.sign(toSign, (short) 0, (short) 32, signature, (short) 0);
+            sigLength += CryptoUtils.fixS(signature, (short) 0);
 
             transaction[(short)(offset + 36)] = (byte) (3 + sigLength + pubKey.length); //InScriptLength
 

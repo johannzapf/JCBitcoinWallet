@@ -3,11 +3,10 @@ package de.johannzapf.jc.bitcoinwallet;
 import javacard.framework.*;
 import javacard.security.*;
 import javacardx.apdu.ExtendedLength;
-import javacardx.crypto.Cipher;
 
 public class Wallet extends Applet implements ExtendedLength {
 
-    private static final byte[] version = {'2', '.', '0', '.', '0'};
+    private static final byte[] version = {'1', '.', '2', '.', 'T'};
     private static final byte CLA = (byte) 0x80;
     private static final byte INS_VERSION = (byte) 0x00;
     private static final byte INS_CONN_MODE = (byte) 0x01;
@@ -105,7 +104,6 @@ public class Wallet extends Applet implements ExtendedLength {
     private void manageTransaction(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         short bytes = apdu.setIncomingAndReceive();
-
 
         if((short)(bytes-37) % 58 != 0){
             ISOException.throwIt(ISO7816.SW_DATA_INVALID);
