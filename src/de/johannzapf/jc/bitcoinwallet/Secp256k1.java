@@ -2,6 +2,9 @@ package de.johannzapf.jc.bitcoinwallet;
 
 import javacard.security.ECKey;
 
+// DISCLAIMER: The following code parts are taken from
+// https://github.com/LedgerHQ/ledger-javacard/blob/master/src/com/ledger/wallet/Secp256k1.java
+
 public class Secp256k1 {
 
     protected static final byte SECP256K1_FP[] = {
