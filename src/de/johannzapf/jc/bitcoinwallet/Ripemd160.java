@@ -2,6 +2,10 @@ package de.johannzapf.jc.bitcoinwallet;
 
 import javacard.framework.Util;
 public class Ripemd160 {
+
+    // DISCLAIMER: The following code parts are taken from
+    // https://github.com/LedgerHQ/ledger-javacard/blob/master/src/com/ledger/wallet/Ripemd160.java
+
     public static void hash32(byte[] buffer, short offset, byte[] target, short targetOffset, byte[] scratch, short scratchOffset)
     {
         byte i;

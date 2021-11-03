@@ -4,6 +4,9 @@ import javacard.security.ECKey;
 
 public class Secp256k1 {
 
+    // DISCLAIMER: The following code parts are taken from
+    // https://github.com/LedgerHQ/ledger-javacard/blob/master/src/com/ledger/wallet/Secp256k1.java
+
     protected static final byte SECP256K1_FP[] = {
             (byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF,
             (byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF,(byte)0xFF,
