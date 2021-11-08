@@ -13,16 +13,21 @@ public class Wallet extends Applet {
     private static final byte INS_CONN_MODE = (byte) 0x01;
     private static final byte INS_STATUS = (byte) 0x02;
     private static final byte INS_INIT = (byte) 0x03;
-    private static final byte INS_VERIFY_PIN = (byte) 0x04;
     private static final byte INS_GET_ADDR = (byte) 0x05;
     private static final byte INS_SIGN = (byte) 0x06;
     private static final byte INS_GET_PUBKEY = (byte) 0x07;
 
+    private static final byte INS_PIN_REMAINING_TRIES = (byte) 0x19;
+    private static final byte INS_VERIFY_PIN = (byte) 0x20;
+    private static final byte INS_MODIFY_PIN = (byte) 0x24;
+
     private static final byte P1_MAINNET = (byte) 0x01;
     private static final byte P1_TESTNET = (byte) 0x02;
 
+    private static final short SW_PINVERIFY_FAILED = (short)0x6900;
 
-    private static final byte PIN_TRIES = (byte) 3;
+
+    private static final byte PIN_TRIES = (byte) 5;
     private static final byte PIN_SIZE = (byte) 4;
 
     private byte[] scratch;
@@ -59,6 +64,7 @@ public class Wallet extends Applet {
         this.address = new byte[25];
 
         this.pin = new OwnerPIN(PIN_TRIES, PIN_SIZE);
+        this.pin.update(new byte[]{0x00, 0x00, 0x00, 0x00}, (short) 0, PIN_SIZE);
 
         this.sign = Signature.getInstance(MessageDigest.ALG_NULL, Signature.SIG_CIPHER_ECDSA, Cipher.PAD_NULL, true);
     }
@@ -96,19 +102,45 @@ public class Wallet extends Applet {
             case INS_SIGN:
                 signTransaction(apdu);
                 break;
+            case INS_PIN_REMAINING_TRIES:
+                getRemainingPINTries(apdu);
+                break;
             case INS_VERIFY_PIN:
-                verifyPin(apdu);
+                verifyPIN(apdu);
+                break;
+            case INS_MODIFY_PIN:
+                modifyPIN(apdu);
                 break;
             default:
                 ISOException.throwIt(ISO7816.SW_INS_NOT_SUPPORTED);
         }
     }
 
-    private void verifyPin(APDU apdu){
+    private void verifyPIN(APDU apdu){
+        byte[] buffer = apdu.getBuffer();
+        short bytes = apdu.setIncomingAndReceive();
 
+        if (!pin.check(buffer, ISO7816.OFFSET_CDATA, (byte) bytes)) {
+            ISOException.throwIt(SW_PINVERIFY_FAILED);
+        }
+    }
+
+    private void modifyPIN(APDU apdu){
+        byte[] buffer = apdu.getBuffer();
+        apdu.setIncomingAndReceive();
+
+        if(pin.check(buffer, ISO7816.OFFSET_CDATA, PIN_SIZE)){
+            pin.update(buffer, (short) (ISO7816.OFFSET_CDATA + PIN_SIZE), PIN_SIZE);
+        } else {
+            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        }
     }
 
     private void signTransaction(APDU apdu){
+        if(!isConnectedViaNFC() && !pin.isValidated()){
+            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        }
+
         byte[] buffer = apdu.getBuffer();
         short bytes = apdu.setIncomingAndReceive();
 
@@ -125,13 +157,7 @@ public class Wallet extends Applet {
 
     private void initialize(APDU apdu){
         byte[] buffer = apdu.getBuffer();
-        short bytes = apdu.setIncomingAndReceive();
-
-        //Set PIN
-        if(bytes != PIN_SIZE){
-            ISOException.throwIt(ISO7816.SW_DATA_INVALID);
-        }
-        pin.update(buffer, ISO7816.OFFSET_CDATA, PIN_SIZE);
+        apdu.setIncomingAndReceive();
 
         //Generate Private and Public Key
         KeyPair keyPair = new KeyPair(KeyPair.ALG_EC_FP, KeyBuilder.LENGTH_EC_FP_256);
@@ -180,12 +206,18 @@ public class Wallet extends Applet {
     }
 
     private void getPubKey(APDU apdu){
+        if(!isConnectedViaNFC() && !pin.isValidated()){
+            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        }
         byte[] buffer = apdu.getBuffer();
         short length = pubKey.getW(buffer, (short) 0);
         apdu.setOutgoingAndSend((short) 0, length);
     }
 
     private void getAddr(APDU apdu){
+        if(!isConnectedViaNFC() && !pin.isValidated()){
+            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
+        }
         byte[] buffer = apdu.getBuffer();
         short length = (short) address.length;
         Util.arrayCopyNonAtomic(address, (short) 0, buffer, (short) 0, length);
@@ -201,8 +233,7 @@ public class Wallet extends Applet {
 
     private void getConnectionMode(APDU apdu){
         byte[] buffer = apdu.getBuffer();
-        buffer[0] = (byte) (((APDU.getProtocol() & APDU.PROTOCOL_MEDIA_MASK)
-                == APDU.PROTOCOL_MEDIA_CONTACTLESS_TYPE_A) ? 1 : 0);
+        buffer[0] = (byte) (isConnectedViaNFC() ? 1 : 0);
         apdu.setOutgoingAndSend((short) 0, (short) 1);
     }
 
@@ -210,6 +241,17 @@ public class Wallet extends Applet {
         byte[] buffer = apdu.getBuffer();
         buffer[0] = this.initialized;
         apdu.setOutgoingAndSend((short) 0, (short) 1);
+    }
+
+    private void getRemainingPINTries(APDU apdu) {
+        byte[] buffer = apdu.getBuffer();
+        buffer[0] = pin.getTriesRemaining();
+        apdu.setOutgoingAndSend((short) 0, (short) 1);
+    }
+
+    private boolean isConnectedViaNFC(){
+        return (APDU.getProtocol() & APDU.PROTOCOL_MEDIA_MASK)
+                == APDU.PROTOCOL_MEDIA_CONTACTLESS_TYPE_A;
     }
 
 }
