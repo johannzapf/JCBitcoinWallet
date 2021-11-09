@@ -45,10 +45,19 @@ public class Wallet extends Applet implements ExtendedLength {
 
     private Transaction tx;
 
+    /**
+     * The install()-Method. Called by the JCVM on Applet install.
+     * @param bArray
+     * @param bOffset
+     * @param bLength
+     */
     public static void install(byte[] bArray, short bOffset, byte bLength) {
         new Wallet().register(bArray, (short) (bOffset + 1), bArray[bOffset]);
     }
 
+    /**
+     * The default constructor allocates all memory of fixed length we will need later and the PIN.
+     */
     public Wallet(){
         this.scratch = JCSystem.makeTransientByteArray((short)256, JCSystem.CLEAR_ON_DESELECT);
 
@@ -59,11 +68,14 @@ public class Wallet extends Applet implements ExtendedLength {
         this.address = new byte[25];
 
         this.pin = new OwnerPIN(PIN_TRIES, PIN_SIZE);
-        this.pin.update(new byte[]{0x00, 0x00, 0x00, 0x00}, (short) 0, PIN_SIZE);
 
         this.tx = new Transaction();
     }
 
+    /**
+     * This method is called when we send an APDU to the card. It reads the INS value and calls the respective method.
+     * @param apdu
+     */
     public void process(APDU apdu) {
         if (selectingApplet()) {
             return;
@@ -108,6 +120,11 @@ public class Wallet extends Applet implements ExtendedLength {
         }
     }
 
+    /**
+     * Reads the PIN sent with APDU and checks it against our OwnerPIN object.
+     * Returns 0x9000 on success and 0x6900 in case the PIN is wrong.
+     * @param apdu
+     */
     private void verifyPIN(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         short bytes = apdu.setIncomingAndReceive();
@@ -117,6 +134,11 @@ public class Wallet extends Applet implements ExtendedLength {
         }
     }
 
+    /**
+     * Reads the PIN sent with the APDU and sets it as our PIN, given that this is the first time this method is called
+     * Returns 0x9000 on success and 0x6900 if the PIN has already bin set.
+     * @param apdu
+     */
     private void modifyPIN(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         apdu.setIncomingAndReceive();
@@ -129,6 +151,13 @@ public class Wallet extends Applet implements ExtendedLength {
         }
     }
 
+    /**
+     * The main method to create a transaction.
+     * Reads the data inside the APDU, parses it into a transaction object and signs the transaction.
+     * Returns the final transaction.
+     * Throws 0x6900 if the PIN is not validated AND we are not connected via NFC
+     * @param apdu
+     */
     private void manageTransaction(APDU apdu){
         if(!isConnectedViaNFC() && !pin.isValidated()){
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
@@ -150,6 +179,11 @@ public class Wallet extends Applet implements ExtendedLength {
         apdu.sendBytesLong(finalTx, (short) 0 , length);
     }
 
+    /**
+     * Generates a new ECC Keypair and generates a Bitcoin address with it.
+     * Sets the initialized flag to 1 once completed.
+     * @param apdu
+     */
     private void initialize(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         apdu.setIncomingAndReceive();
@@ -200,16 +234,21 @@ public class Wallet extends Applet implements ExtendedLength {
         this.initialized = 0x01;
     }
 
+    /**
+     * Returns the address of the wallet.
+     * @param apdu
+     */
     private void getAddr(APDU apdu){
-        if(!isConnectedViaNFC() && !pin.isValidated()){
-            ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
-        }
         byte[] buffer = apdu.getBuffer();
         short length = (short) address.length;
         Util.arrayCopyNonAtomic(address, (short) 0, buffer, (short) 0, length);
         apdu.setOutgoingAndSend((short) 0, length);
     }
 
+    /**
+     * Returns the version of this wallet
+     * @param apdu
+     */
     private void getVersion(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
         short length = (short) version.length;
@@ -217,18 +256,30 @@ public class Wallet extends Applet implements ExtendedLength {
         apdu.setOutgoingAndSend((short) 0, length);
     }
 
+    /**
+     * Returns 1 if the card is connected via NFC and 0 otherwise
+     * @param apdu
+     */
     private void getConnectionMode(APDU apdu){
         byte[] buffer = apdu.getBuffer();
         buffer[0] = (byte) (isConnectedViaNFC() ? 1 : 0);
         apdu.setOutgoingAndSend((short) 0, (short) 1);
     }
 
+    /**
+     * Returns the value of the initialized flag
+     * @param apdu
+     */
     private void getStatus(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
         buffer[0] = this.initialized;
         apdu.setOutgoingAndSend((short) 0, (short) 1);
     }
 
+    /**
+     * Returns the remaing PIN tries
+     * @param apdu
+     */
     private void getRemainingPINTries(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
         buffer[0] = pin.getTriesRemaining();
