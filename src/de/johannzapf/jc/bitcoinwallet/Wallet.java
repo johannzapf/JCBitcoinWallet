@@ -47,6 +47,7 @@ public class Wallet extends Applet {
     private byte[] net;
 
     private OwnerPIN pin;
+    private boolean pinInitialized = false;
 
     public static void install(byte[] bArray, short bOffset, byte bLength) {
         new Wallet().register(bArray, (short) (bOffset + 1), bArray[bOffset]);
@@ -129,8 +130,9 @@ public class Wallet extends Applet {
         byte[] buffer = apdu.getBuffer();
         apdu.setIncomingAndReceive();
 
-        if(pin.check(buffer, ISO7816.OFFSET_CDATA, PIN_SIZE)){
-            pin.update(buffer, (short) (ISO7816.OFFSET_CDATA + PIN_SIZE), PIN_SIZE);
+        if(!pinInitialized){
+            pin.update(buffer, ISO7816.OFFSET_CDATA, PIN_SIZE);
+            pinInitialized = true;
         } else {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
