@@ -6,7 +6,7 @@ import javacardx.crypto.Cipher;
 
 public class Wallet extends Applet {
 
-    private static final byte[] version = {'1', '.', '2', '.', 'S'};
+    private static final byte[] version = {'1', '.', '3', '.', 'S'};
     private static final byte CLA = (byte) 0x80;
 
     private static final byte INS_VERSION = (byte) 0x00;
@@ -163,7 +163,7 @@ public class Wallet extends Applet {
     /**
      * The main method to sign a transaction.
      * Reads the hash inside the APDU, signs it and returns the signature.
-     * Throws 0x6900 if the PIN is not validated AND we are not connected via NFC
+     * Throws 0x6982 if the PIN is not validated AND we are not connected via NFC
      * @param apdu
      */
     private void signTransaction(APDU apdu){
