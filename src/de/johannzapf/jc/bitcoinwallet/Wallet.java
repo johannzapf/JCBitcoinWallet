@@ -156,7 +156,7 @@ public class Wallet extends Applet implements ExtendedLength {
      * The main method to create a transaction.
      * Reads the data inside the APDU, parses it into a transaction object and signs the transaction.
      * Returns the final transaction.
-     * Throws 0x6900 if the PIN is not validated AND we are not connected via NFC
+     * Throws 0x6982 if the PIN is not validated AND we are not connected via NFC
      * Throws 0x6901 if we are connected via NFC but the payment amount is exceeded
      * @param apdu
      */
