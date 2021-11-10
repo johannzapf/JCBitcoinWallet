@@ -6,7 +6,7 @@ import javacardx.apdu.ExtendedLength;
 
 public class Wallet extends Applet implements ExtendedLength {
 
-    private static final byte[] version = {'1', '.', '2', '.', 'T'};
+    private static final byte[] version = {'1', '.', '3', '.', 'T'};
     private static final byte CLA = (byte) 0x80;
     private static final byte INS_VERSION = (byte) 0x00;
     private static final byte INS_CONN_MODE = (byte) 0x01;
