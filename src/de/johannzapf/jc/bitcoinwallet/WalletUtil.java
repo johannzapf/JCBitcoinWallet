@@ -1,22 +1,22 @@
 package de.johannzapf.jc.bitcoinwallet;
 
-import javacard.framework.JCSystem;
 
 public class WalletUtil {
 
     public static byte[] contactlessLimit = {0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x0d, 0x40}; // 0.002 BTC
 
     /**
-     * Reverses a given byte array
-     * @param a
-     * @return
+     * Copies the in array from the inOffset to the out array from the outOffset for length bytes in reverse order.
+     * @param in
+     * @param inOffset
+     * @param out
+     * @param outOffset
+     * @param length
      */
-    public static byte[] reverse(byte[] a){
-        byte[] reversed = JCSystem.makeTransientByteArray((short) a.length, JCSystem.CLEAR_ON_DESELECT);
-        for(short i = 0; i < a.length; i++){
-            reversed[i] = a[(short)(a.length-1-i)];
+    public static void reverseArrayCopy(byte[] in, short inOffset, byte[] out, short outOffset, short length){
+        for(short s = 0; s < length; s++){
+            out[(short) (outOffset+s)] = in[(short) (inOffset+length-s-1)];
         }
-        return reversed;
     }
 
     /**

@@ -82,7 +82,7 @@ public class Transaction {
         for(short i = 0; i < this.utxoAmount; i++){
             TransactionInput ti = this.transactionInputs[i];
 
-            Util.arrayCopyNonAtomic(WalletUtil.reverse(ti.getPrevTxHash()), (short) 0, transaction, offset, (short) 32); //UTXO Hash
+            WalletUtil.reverseArrayCopy(ti.getPrevTxHash(), (short) 0, transaction, offset, (short) 32); //UTXO Hash
             transaction[(short)(offset + 32)] = ti.getPrevOutputIndex(); //UTXO Output index
 
             byte[] toSign = getDoubleHashedTx(pubKeyHash, i); //Retrieve SHA-256 Hash that needs to be signed
@@ -134,7 +134,7 @@ public class Transaction {
         for(short i = 0; i < utxoAmount; i++){
             TransactionInput ti = this.transactionInputs[i];
 
-            Util.arrayCopyNonAtomic(WalletUtil.reverse(ti.getPrevTxHash()), (short) 0, toSign, offset, (short) 32); //UTXO Hash
+            WalletUtil.reverseArrayCopy(ti.getPrevTxHash(), (short) 0, toSign, offset, (short) 32); //UTXO Hash
 
             toSign[(short)(offset + 32)] = ti.getPrevOutputIndex(); //UTXO Output index
 
