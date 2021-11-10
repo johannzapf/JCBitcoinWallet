@@ -105,7 +105,7 @@ public class Wallet extends Applet implements ExtendedLength {
                 getAddr(apdu);
                 break;
             case INS_PAY:
-                manageTransaction(apdu);
+                createTransaction(apdu);
                 break;
             case INS_PIN_REMAINING_TRIES:
                 getRemainingPINTries(apdu);
@@ -160,7 +160,7 @@ public class Wallet extends Applet implements ExtendedLength {
      * Throws 0x6901 if we are connected via NFC but the payment amount is exceeded
      * @param apdu
      */
-    private void manageTransaction(APDU apdu){
+    private void createTransaction(APDU apdu){
         if(!isConnectedViaNFC() && !pin.isValidated()){
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
