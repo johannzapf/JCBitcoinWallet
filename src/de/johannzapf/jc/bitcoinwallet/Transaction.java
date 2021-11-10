@@ -253,4 +253,8 @@ public class Transaction {
 
         return scriptPubKey;
     }
+
+    public byte[] getAmount(){
+        return this.amount;
+    }
 }

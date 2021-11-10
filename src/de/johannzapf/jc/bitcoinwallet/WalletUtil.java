@@ -4,6 +4,8 @@ import javacard.framework.JCSystem;
 
 public class WalletUtil {
 
+    public static byte[] contactlessLimit = {0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x0d, 0x40}; // 0.002 BTC
+
     /**
      * Reverses a given byte array
      * @param a
@@ -34,5 +36,19 @@ public class WalletUtil {
             length--;
         }
         return (short) (length+1);
+    }
+
+    public static boolean isHigherThanContactlessLimit(byte[] amount){
+        if(amount.length != 8){
+            return true;
+        }
+        for(short i = 0; i < 8; i++){
+            if(amount[i] > contactlessLimit[i]){
+                return true;
+            } else if(amount[i] < contactlessLimit[i]){
+                return false;
+            }
+        }
+        return false;
     }
 }

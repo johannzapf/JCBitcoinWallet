@@ -23,6 +23,7 @@ public class Wallet extends Applet implements ExtendedLength {
     private static final byte P1_TESTNET = (byte) 0x02;
 
     private static final short SW_PINVERIFY_FAILED = (short)0x6900;
+    private static final short SW_NFC_LIMIT_EXCEEDED = (short)0x6901;
 
 
     private static final byte PIN_TRIES = (byte) 5;
@@ -156,6 +157,7 @@ public class Wallet extends Applet implements ExtendedLength {
      * Reads the data inside the APDU, parses it into a transaction object and signs the transaction.
      * Returns the final transaction.
      * Throws 0x6900 if the PIN is not validated AND we are not connected via NFC
+     * Throws 0x6901 if we are connected via NFC but the payment amount is exceeded
      * @param apdu
      */
     private void manageTransaction(APDU apdu){
@@ -171,6 +173,11 @@ public class Wallet extends Applet implements ExtendedLength {
         }
 
         tx.parse(buffer, ISO7816.OFFSET_CDATA);
+
+        if(isConnectedViaNFC() && WalletUtil.isHigherThanContactlessLimit(tx.getAmount())){
+            ISOException.throwIt(SW_NFC_LIMIT_EXCEEDED);
+        }
+
         byte[] finalTx = tx.getFinalTransaction(pubKeyHash, bcPub, privKey);
         short length = WalletUtil.getTransactionLength(finalTx);
 
