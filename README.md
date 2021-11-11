@@ -2,6 +2,7 @@
 A Bitcoin Wallet, implemented in Java Card
 
 ## How to install
+If you don't want to build the CAP file yourself, you can skip steps 1-4 and just use the provided *btcwallet.cap* file.
 1. This project uses [ant-javacard](https://github.com/martinpaljak/ant-javacard). Download and install it first.
 1. Make sure you have the JCKit for your Java Card version downloaded
 1. Edit the path for the JCKit and your desired output path in the build.xml file
@@ -10,12 +11,12 @@ A Bitcoin Wallet, implemented in Java Card
 
 ## Versions
 There are two, incompatible versions of this applet:
-1. Version A
+1. Version A (this version)
     * can be found on the *signaturecard*-Branch 
     * is only compatible with the *signaturecard*-Branch of the terminal application
     * smart card is only used to sign transactions prepared by the terminal
     
-2. Version B (this version)
+2. Version B
     * can be found on the *master*-Branch
     * is only compatible with the *master*-Branch of the terminal application
     * smart card creates the transaction on its own with data sent from the terminal
