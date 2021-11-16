@@ -190,6 +190,7 @@ public class Wallet extends Applet implements ExtendedLength {
                 readCount = apdu.receiveBytes ( ISO7816.OFFSET_CDATA );
             }
 
+            // Ignore first two bytes, they contain length information
             tx.parse(incomingBuffer, (short) 2);
         } else {
             // Handling of standard APDU (size <= 256 bytes)
