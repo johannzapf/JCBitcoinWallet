@@ -46,6 +46,8 @@ public class Wallet extends Applet implements ExtendedLength {
 
     private Transaction tx;
 
+    private byte[] incomingBuffer;
+
     /**
      * The install()-Method. Called by the JCVM on Applet install.
      * @param bArray
@@ -71,6 +73,8 @@ public class Wallet extends Applet implements ExtendedLength {
         this.pin = new OwnerPIN(PIN_TRIES, PIN_SIZE);
 
         this.tx = new Transaction();
+
+        this.incomingBuffer = new byte[617]; // Supports up to ten input transactions
     }
 
     /**
@@ -166,13 +170,32 @@ public class Wallet extends Applet implements ExtendedLength {
         }
 
         byte[] buffer = apdu.getBuffer();
-        short bytes = apdu.setIncomingAndReceive();
 
-        if((short)(bytes-37) % 58 != 0){
+        short len = apdu.getIncomingLength();
+
+        if((short)(len-37) % 58 != 0){
+            // If the length of the incoming data does not match our structure, we throw an error
             ISOException.throwIt(ISO7816.SW_DATA_INVALID);
         }
 
-        tx.parse(buffer, ISO7816.OFFSET_CDATA);
+        if(len > 256) {
+            // Handling of extended APDU (size > 256 bytes)
+            short readCount = apdu.setIncomingAndReceive();
+            short offset = 0;
+
+            while (len > 0){
+                Util.arrayCopyNonAtomic(buffer, ISO7816.OFFSET_CDATA, incomingBuffer, offset, (short) (readCount+4));
+                offset += (short)(readCount+2);
+                len -= readCount;
+                readCount = apdu.receiveBytes ( ISO7816.OFFSET_CDATA );
+            }
+
+            tx.parse(incomingBuffer, (short) 2);
+        } else {
+            // Handling of standard APDU (size <= 256 bytes)
+            apdu.setIncomingAndReceive();
+            tx.parse(buffer, ISO7816.OFFSET_CDATA);
+        }
 
         if(isConnectedViaNFC() && WalletUtil.isHigherThanContactlessLimit(tx.getAmount())){
             ISOException.throwIt(SW_NFC_LIMIT_EXCEEDED);
