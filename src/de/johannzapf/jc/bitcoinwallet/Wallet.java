@@ -74,7 +74,7 @@ public class Wallet extends Applet implements ExtendedLength {
 
         this.tx = new Transaction();
 
-        this.incomingBuffer = new byte[617]; // Supports up to ten input transactions
+        this.incomingBuffer = new byte[619]; // Supports up to ten input transactions
     }
 
     /**
