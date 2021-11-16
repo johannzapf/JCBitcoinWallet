@@ -47,8 +47,8 @@ public class Transaction {
         Util.arrayCopyNonAtomic(data, (short) (offset+28), this.change, (short) 0, (short) 8);
 
         this.utxoAmount = data[(short) (offset+36)];
-        if(utxoAmount > 10){
-            //We do not support transactions with more than three inputs
+        if(utxoAmount > 7){
+            //We do not support transactions with more than seven inputs
             ISOException.throwIt(ISO7816.SW_DATA_INVALID);
         }
         this.transactionInputs = new TransactionInput[utxoAmount];
