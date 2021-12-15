@@ -60,7 +60,7 @@ public class Wallet extends Applet {
     }
 
     /**
-     * The default constructor allocates all memory of fixed length we will need later and the PIN.
+     * The default constructor allocates all memory of fixed length that is needed later and the PIN.
      */
     public Wallet(){
         this.scratch = JCSystem.makeTransientByteArray((short)256, JCSystem.CLEAR_ON_DESELECT);
@@ -79,7 +79,7 @@ public class Wallet extends Applet {
     }
 
     /**
-     * This method is called when we send an APDU to the card. It reads the INS value and calls the respective method.
+     * This method is called when an APDU is sent to the card. It reads the INS value and calls the respective method.
      * @param apdu
      */
     public void process(APDU apdu) {
@@ -130,7 +130,7 @@ public class Wallet extends Applet {
     }
 
     /**
-     * Reads the PIN sent with APDU and checks it against our OwnerPIN object.
+     * Reads the PIN sent with APDU and checks it against the OwnerPIN object.
      * Returns 0x9000 on success and 0x6900 in case the PIN is wrong.
      * @param apdu
      */
@@ -144,8 +144,8 @@ public class Wallet extends Applet {
     }
 
     /**
-     * Reads the PIN sent with the APDU and sets it as our PIN, given that this is the first time this method is called
-     * Returns 0x9000 on success and 0x6900 if the PIN has already bin set.
+     * Reads the PIN sent with the APDU and sets it as the new PIN, given that this is the first time this method is called
+     * Returns 0x9000 on success and 0x6900 if the PIN has already been set.
      * @param apdu
      */
     private void modifyPIN(APDU apdu){
@@ -163,7 +163,7 @@ public class Wallet extends Applet {
     /**
      * The main method to sign a transaction.
      * Reads the hash inside the APDU, signs it and returns the signature.
-     * Throws 0x6982 if the PIN is not validated AND we are not connected via NFC
+     * Throws 0x6982 if the PIN is not validated AND the card is not connected via NFC
      * @param apdu
      */
     private void signTransaction(APDU apdu){
@@ -293,7 +293,7 @@ public class Wallet extends Applet {
     }
 
     /**
-     * Returns the remaing PIN tries
+     * Returns the remaining PIN tries
      * @param apdu
      */
     private void getRemainingPINTries(APDU apdu) {
