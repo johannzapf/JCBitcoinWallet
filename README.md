@@ -10,7 +10,7 @@ If you don't want to build the CAP file yourself, you can skip steps 1-4 and jus
 1. Install this CAP file onto your smart card (for example using [GlobalPlatformPro](https://github.com/martinpaljak/GlobalPlatformPro))
 
 ## Versions
-There are two, incompatible versions of this applet:
+There are two incompatible versions of this applet:
 1. Version A (this version)
     * can be found on the *signaturecard*-Branch 
     * is only compatible with the *signaturecard*-Branch of the terminal application
