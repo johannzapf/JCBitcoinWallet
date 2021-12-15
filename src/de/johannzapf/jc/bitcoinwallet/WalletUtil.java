@@ -38,6 +38,11 @@ public class WalletUtil {
         return (short) (length+1);
     }
 
+    /**
+     * Checks if the given amount is higher than the limit
+     * @param amount
+     * @return
+     */
     public static boolean isHigherThanContactlessLimit(byte[] amount){
         if(amount.length != 8){
             return true;

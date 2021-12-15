@@ -173,7 +173,7 @@ public class Transaction {
 
     /**
      * Takes a transaction and, starting from the offset, adds:
-     *  - Number of outputs (always 2 in our case)
+     *  - Number of outputs (always 2 in this case)
      *  - Output 1 Value
      *  - Output 1 Script Length
      *  - Output 1 Script
